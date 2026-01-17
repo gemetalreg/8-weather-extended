@@ -28,6 +28,19 @@ const saveToken = async (token) => {
   }
 };
 
+const saveLang = async (lang) => {
+  if (!lang.length) {
+    printError("Не передан lang");
+    return;
+  }
+  try {
+    await saveKeyValue(TOKEN_DICTIONARY.lang, lang);
+    printSuccess("Lang сохранён");
+  } catch (e) {
+    printError(e.message);
+  }
+};
+
 const saveCitys = async (cities) => {
   if (!cities.length) {
     printError("Не передан город или города");
@@ -35,7 +48,7 @@ const saveCitys = async (cities) => {
   }
   try {
     cities = cities.trim().split(" ");
-    if (cities.isArray()) {
+    if (Array.isArray(cities)) {
       await saveKeyValue(TOKEN_DICTIONARY.city, cities);
       printSuccess("Города сохранёны");
     } else {
@@ -54,7 +67,9 @@ const getForcast = async () => {
       : await getKeyValue(TOKEN_DICTIONARY.city);
     cities.forEach(async (city) => {
       const weather = await getWeather(city);
-      printWeather(weather, getIcon(weather.weather[0].icon));
+      TOKEN_DICTIONARY.lang === "ru"
+        ? printWeather(weather, getIcon(weather.weather[0].icon))
+        : printWeatherEng(weather, getIcon(weather.weather[0].icon));
     });
   } catch (e) {
     if (e?.response?.status == 404) {
@@ -70,6 +85,9 @@ const getForcast = async () => {
 const initCLI = () => {
   const args = getArgs(process.argv);
   if (args.h) {
+    if (args.l !== "ru") {
+      return printHelpEng();
+    }
     return printHelp();
   }
   if (args.s) {
@@ -79,7 +97,7 @@ const initCLI = () => {
     return saveToken(args.t);
   }
   if (args.l) {
-    TOKEN_DICTIONARY.lang = args.l;
+    return saveLang(args.l);
   }
 
   return getForcast();
